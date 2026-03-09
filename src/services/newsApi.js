@@ -5,7 +5,7 @@ const BASE_URL = 'https://newsapi.org/v2'
 
 export const getTopHeadlines = async (country = 'us') => {
   const response = await axios.get(`${BASE_URL}/top-headlines`, {
-    params: { country, apiKey: API_KEY }
+    params: { country, pageSize: 50, apiKey: API_KEY }
   })
   return response.data.articles
 }
@@ -16,6 +16,7 @@ export const searchNews = async (keyword, category = '') => {
       q: keyword,
       category: category || undefined,
       country: 'us',       // required to avoid NewsAPI error
+      pageSize: 50,
       apiKey: API_KEY
     }
   })

@@ -3,12 +3,23 @@ import { useTopHeadlines } from '../hooks/useNewsApi'
 import NewsTable from '../components/NewsTable'
 
 const ITEMS_PER_PAGE = 10
+const FILTER_MODAL_SEEN_KEY = 'newsintel_filter_modal_seen'
 
 export default function HomePage() {
   const { articles, loading, error } = useTopHeadlines()
   const [interest, setInterest] = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
+  const [draftInterest, setDraftInterest] = useState('')
+  const [draftSourceFilter, setDraftSourceFilter] = useState('')
+
+  useEffect(() => {
+    const hasSeenModal = localStorage.getItem(FILTER_MODAL_SEEN_KEY) === 'true'
+    if (!hasSeenModal) {
+      setIsFilterModalOpen(true)
+    }
+  }, [])
 
   const filteredArticles = useMemo(() => {
     const normalizedInterest = interest
@@ -53,6 +64,18 @@ export default function HomePage() {
     return filteredArticles.slice(start, start + ITEMS_PER_PAGE)
   }, [filteredArticles, currentPage])
 
+  const closeFilterModal = () => {
+    localStorage.setItem(FILTER_MODAL_SEEN_KEY, 'true')
+    setIsFilterModalOpen(false)
+  }
+
+  const handleFilterSubmit = (e) => {
+    e.preventDefault()
+    setInterest(draftInterest)
+    setSourceFilter(draftSourceFilter)
+    closeFilterModal()
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -79,41 +102,35 @@ export default function HomePage() {
       )}
 
       {!loading && !error && (
-        <div className="form-card">
-          <h2>Filter by Your Interest</h2>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Interest Keywords</label>
-              <input
-                type="text"
-                value={interest}
-                onChange={(e) => setInterest(e.target.value)}
-                placeholder="ai, startups, geopolitics"
-              />
-            </div>
-            <div className="form-group">
-              <label>Source Name</label>
-              <input
-                type="text"
-                value={sourceFilter}
-                onChange={(e) => setSourceFilter(e.target.value)}
-                placeholder="BBC, Reuters, The Verge"
-              />
-            </div>
-          </div>
-          <div className="filter-actions">
+        <div className="filter-summary">
+          <p>
+            Active filters: {interest.trim() || 'none'} | Source: {sourceFilter.trim() || 'any'}
+          </p>
+          <div className="pagination-actions">
             <button
               className="btn btn-primary"
               type="button"
               onClick={() => {
+                setDraftInterest(interest)
+                setDraftSourceFilter(sourceFilter)
+                setIsFilterModalOpen(true)
+              }}
+            >
+              Apply Filters
+            </button>
+            <button
+              className="btn btn-outline"
+              type="button"
+              onClick={() => {
                 setInterest('')
                 setSourceFilter('')
+                setDraftInterest('')
+                setDraftSourceFilter('')
               }}
               disabled={!interest.trim() && !sourceFilter.trim()}
             >
-              Reset Filters
+              Clear Filters
             </button>
-            <p className="filter-helper">Use comma-separated keywords to match titles and descriptions.</p>
           </div>
         </div>
       )}
@@ -160,6 +177,46 @@ export default function HomePage() {
             </div>
           )}
         </>
+      )}
+
+      {isFilterModalOpen && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="news-filter-modal-title">
+          <div className="modal-card">
+            <h2 id="news-filter-modal-title">Set Your News Preferences</h2>
+            <p>Choose optional filters for this session. This popup appears only once.</p>
+
+            <form onSubmit={handleFilterSubmit} className="auth-form">
+              <div className="form-group">
+                <label>Interest Keywords</label>
+                <input
+                  type="text"
+                  value={draftInterest}
+                  onChange={(e) => setDraftInterest(e.target.value)}
+                  placeholder="ai, startups, geopolitics"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Source Name</label>
+                <input
+                  type="text"
+                  value={draftSourceFilter}
+                  onChange={(e) => setDraftSourceFilter(e.target.value)}
+                  placeholder="BBC, Reuters, The Verge"
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn btn-outline" onClick={closeFilterModal}>
+                  Continue Without Filters
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Apply Filters
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   )
