@@ -736,6 +736,26 @@ td a:hover {
   background: #fff2ef;
 }
 
+.pagination-bar {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.pagination-text {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

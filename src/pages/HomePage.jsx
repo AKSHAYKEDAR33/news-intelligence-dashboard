@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTopHeadlines } from '../hooks/useNewsApi'
 import NewsTable from '../components/NewsTable'
+
+const ITEMS_PER_PAGE = 10
 
 export default function HomePage() {
   const { articles, loading, error } = useTopHeadlines()
   const [interest, setInterest] = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
 
   const filteredArticles = useMemo(() => {
     const normalizedInterest = interest
@@ -35,6 +38,21 @@ export default function HomePage() {
     })
   }, [articles, interest, sourceFilter])
 
+  const totalPages = Math.max(1, Math.ceil(filteredArticles.length / ITEMS_PER_PAGE))
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [interest, sourceFilter])
+
+  useEffect(() => {
+    setCurrentPage((prev) => Math.min(prev, totalPages))
+  }, [totalPages])
+
+  const paginatedArticles = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return filteredArticles.slice(start, start + ITEMS_PER_PAGE)
+  }, [filteredArticles, currentPage])
+
   return (
     <div>
       <div className="page-header">
@@ -50,6 +68,9 @@ export default function HomePage() {
           </div>
           <div className="stat-chip">
             <strong>{filteredArticles.length}</strong> matching
+          </div>
+          <div className="stat-chip">
+            <strong>{ITEMS_PER_PAGE}</strong> per page
           </div>
           <div className="stat-chip">
             Updated at {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
@@ -109,7 +130,37 @@ export default function HomePage() {
         </div>
       )}
 
-      {!loading && !error && <NewsTable articles={filteredArticles} />}
+      {!loading && !error && (
+        <>
+          <NewsTable articles={paginatedArticles} />
+
+          {filteredArticles.length > ITEMS_PER_PAGE && (
+            <div className="pagination-bar">
+              <p className="pagination-text">
+                Page {currentPage} of {totalPages}
+              </p>
+              <div className="pagination-actions">
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
